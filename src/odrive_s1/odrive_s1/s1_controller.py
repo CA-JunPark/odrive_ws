@@ -29,6 +29,10 @@ class OdriveNode(Node):
             self.rightW = odrive.find_any(serial_number="396D346B3331")  # right
             self.leftW.clear_errors()
             self.rightW.clear_errors()
+            self.leftW.axis0.controller.config.input_mode = 2
+            self.rightW.axis0.controller.config.input_mode = 2
+            self.setVelRampRate(0.1)
+            self.setInertia()
             
             self.get_logger().info("Successfully connected to both ODrive devices")
             self.get_logger().info(f"voltage L: {self.leftW.vbus_voltage} R: {self.rightW.vbus_voltage}")
@@ -41,6 +45,15 @@ class OdriveNode(Node):
         # Create a timer to periodically send commands and publish odometry
         timer_period = 0.01  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
+        self.get_logger().info("Controller Ready to be Used")
+    
+    def setVelRampRate(self, val):
+        self.leftW.axis0.controller.config.vel_ramp_rate=val
+        self.rightW.axis0.controller.config.vel_ramp_rate=val
+    
+    def setInertia(self, val=0.0368):
+        self.leftW.axis0.controller.config.inertia = 0.0368
+        self.rightW.axis0.controller.config.inertia = 0.0368
         
     def cmd_vel_callback(self, msg: Twist):
         self.get_logger().info(
@@ -66,13 +79,18 @@ class OdriveNode(Node):
             # Convert these from m/s to turns/sec using wheel circumference.
             left_cmd_turns = v_left_cmd / self.wheel_circumference
             right_cmd_turns = v_right_cmd / self.wheel_circumference
+            # # scale 
+            # left_cmd_turns = left_cmd_turns * 0.99
+            # right_cmd_turns = right_cmd_turns * 1.03
             self.get_logger().info(
-            f"Command Turns/s: left={left_cmd_turns:.4f} turns/s, right={right_cmd_turns:.4f} turns/s"
-        )
+                f"Command Turns/s: left={left_cmd_turns:.4f} turns/s, right={right_cmd_turns:.4f} turns/s"
+            )
             try:
                 # Send the velocity commands to the ODrive devices.
-                self.leftW.axis0.controller.input_vel = left_cmd_turns
-                self.rightW.axis0.controller.input_vel = right_cmd_turns
+                # self.leftW.axis0.controller.input_vel = left_cmd_turns
+                # self.rightW.axis0.controller.input_vel = right_cmd_turns
+                pass
+                
             except Exception as e:
                 self.get_logger().error(f"Error sending command to ODrive devices: {e}")
         
@@ -100,10 +118,6 @@ class OdriveNode(Node):
         odom_msg.twist.twist.angular.z = angular_est
         
         self.odom_pub.publish(odom_msg)
-        
-        # self.get_logger().info(
-        #     f"Published odom: linear={linear_est:.2f} m/s, angular={angular_est:.2f} rad/s"
-        # )
 
     def stop(self):
         # Idle state
