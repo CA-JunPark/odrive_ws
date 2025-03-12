@@ -1,7 +1,7 @@
-import rclpy
-from rclpy.node import Node
-from geometry_msgs.msg import Twist
-from nav_msgs.msg import Odometry
+import rclpy # type: ignore
+from rclpy.node import Node # type: ignore
+from geometry_msgs.msg import Twist # type: ignore
+from nav_msgs.msg import Odometry # type: ignore
 import odrive
 
 class OdriveNode(Node):

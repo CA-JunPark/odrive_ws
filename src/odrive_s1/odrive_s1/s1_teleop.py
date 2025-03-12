@@ -1,7 +1,7 @@
-import rclpy
-from rclpy.node import Node
+import rclpy # type: ignore
+from rclpy.node import Node # type: ignore
 import getch
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist # type: ignore
 
 def mps_to_turns_per_sec(mps):
     """
