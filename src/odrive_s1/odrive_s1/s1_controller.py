@@ -43,7 +43,7 @@ class OdriveNode(Node):
             return
 
         # Create a timer to periodically send commands and publish odometry
-        timer_period = 0.01  # seconds
+        timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.get_logger().info("Controller Ready to be Used")
     

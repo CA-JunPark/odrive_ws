@@ -20,29 +20,50 @@ class IMU_MPU6050_Publisher(Node):
         self.bus.write_byte_data(self.address, self.power_mgmt_1, 0)
 
         # Calibration offsets (only for used axes)
-        self.gyro_z_offset = 0.0
-        self.accel_x_offset = 0.0
+        self.gyro_z_offset = 0.2235
+        self.accel_x_offset = 0.0116
 
-        # Perform calibration at startup
-        self.calibrate_imu()
+        # Last known good values (initialized to 0)
+        self.last_gyro_zout = 0
+        self.last_accel_xout = 0
+
+        # Perform calibration at startup (commented out as per your code)
+        # self.calibrate_imu()
 
         self.get_logger().info("IMU Publisher node (2D) has started.")
 
     def read_byte(self, adr):
-        return self.bus.read_byte_data(self.address, adr)
+        try:
+            value = self.bus.read_byte_data(self.address, adr)
+            return value
+        except (IOError, OSError) as e:
+            self.get_logger().warn(f"Failed to read byte at address {adr}: {str(e)}")
+            return 0  # Default fallback (no previous value stored here)
 
     def read_word(self, adr):
-        high = self.bus.read_byte_data(self.address, adr)
-        low = self.bus.read_byte_data(self.address, adr+1)
-        val = (high << 8) + low
-        return val
+        try:
+            high = self.bus.read_byte_data(self.address, adr)
+            low = self.bus.read_byte_data(self.address, adr + 1)
+            val = (high << 8) + low
+            return val
+        except (IOError, OSError) as e:
+            self.get_logger().warn(f"Failed to read word at address {adr}: {str(e)}")
+            return 0  # Default fallback (no previous value stored here)
 
     def read_word_2c(self, adr):
-        val = self.read_word(adr)
-        if val >= 0x8000:
-            return -((65535 - val) + 1)
-        else:
+        try:
+            val = self.read_word(adr)
+            if val >= 0x8000:
+                return -((65535 - val) + 1)
             return val
+        except (IOError, OSError) as e:
+            self.get_logger().warn(f"Failed to read word_2c at address {adr}: {str(e)}")
+            # Return the last known good value based on the address
+            if adr == 0x47:  # Gyro Z
+                return self.last_gyro_zout
+            elif adr == 0x3b:  # Accel X
+                return self.last_accel_xout
+            return 0  # Default for unexpected address
 
     def calibrate_imu(self):
         self.get_logger().info("Starting 2D IMU calibration. Keep the sensor stationary...")
@@ -66,6 +87,10 @@ class IMU_MPU6050_Publisher(Node):
             gyro_z_sum += gyro_z
             accel_x_sum += accel_x
 
+            # Update last known values (even during calibration)
+            self.last_gyro_zout = gyro_zout
+            self.last_accel_xout = accel_xout
+
             time.sleep(0.001)  # Small delay between samples
 
         # Calculate averages (offsets)
@@ -86,6 +111,10 @@ class IMU_MPU6050_Publisher(Node):
         
         accel_scale = 16384.0
         accel_x = ((accel_xout / accel_scale) * 9.81) - self.accel_x_offset
+
+        # Update last known good values
+        self.last_gyro_zout = gyro_zout
+        self.last_accel_xout = accel_xout
 
         # Create and populate the Imu message
         imu_msg = Imu()
