@@ -25,7 +25,7 @@ class S1TeleopPub(Node):
         self.get_logger().info('S1 Teleop Started')
         
     def main_loop(self):
-        speed =  0.2 #m/s
+        speed =  0.1 #m/s
         spinScale = 3.3
         twist = Twist()
         while rclpy.ok():

@@ -24,6 +24,7 @@ setup(
         'console_scripts': [
             "s1_teleop=odrive_s1.s1_teleop:main",
             "s1_controller=odrive_s1.s1_controller:main",
+            "imu_mpu6050=odrive_s1.imu_mpu6050:main"
         ],
     },
 )

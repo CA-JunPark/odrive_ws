@@ -29,9 +29,9 @@ class OdriveNode(Node):
             self.rightW = odrive.find_any(serial_number="396D346B3331")  # right
             self.leftW.clear_errors()
             self.rightW.clear_errors()
-            self.leftW.axis0.controller.config.input_mode = 2
-            self.rightW.axis0.controller.config.input_mode = 2
-            self.setVelRampRate(0.1)
+            self.setInputMode(2)
+            
+            self.setVelRampRate(0.05)
             self.setInertia()
             
             self.get_logger().info("Successfully connected to both ODrive devices")
@@ -46,6 +46,13 @@ class OdriveNode(Node):
         timer_period = 0.01  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.get_logger().info("Controller Ready to be Used")
+    
+        
+    def setInputMode(self, mode=1):
+        # 1 = Passthrough
+        # 2 = Vel_Ramp
+        self.leftW.axis0.controller.config.input_mode = mode
+        self.rightW.axis0.controller.config.input_mode = mode
     
     def setVelRampRate(self, val):
         self.leftW.axis0.controller.config.vel_ramp_rate=val
@@ -80,16 +87,15 @@ class OdriveNode(Node):
             left_cmd_turns = v_left_cmd / self.wheel_circumference
             right_cmd_turns = v_right_cmd / self.wheel_circumference
             # # scale 
-            # left_cmd_turns = left_cmd_turns * 0.99
-            # right_cmd_turns = right_cmd_turns * 1.03
+            left_cmd_turns = left_cmd_turns * 0.99
+            right_cmd_turns = right_cmd_turns * 1.05
             self.get_logger().info(
                 f"Command Turns/s: left={left_cmd_turns:.4f} turns/s, right={right_cmd_turns:.4f} turns/s"
             )
             try:
                 # Send the velocity commands to the ODrive devices.
-                # self.leftW.axis0.controller.input_vel = left_cmd_turns
-                # self.rightW.axis0.controller.input_vel = right_cmd_turns
-                pass
+                self.leftW.axis0.controller.input_vel = left_cmd_turns
+                self.rightW.axis0.controller.input_vel = right_cmd_turns
                 
             except Exception as e:
                 self.get_logger().error(f"Error sending command to ODrive devices: {e}")
