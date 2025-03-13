@@ -16,9 +16,22 @@ class OdriveNode(Node):
         self.declare_parameter("wheel_base", 0.51)
         self.wheel_circumference = self.get_parameter("wheel_circumference").value
         self.wheel_base = self.get_parameter("wheel_base").value
+        
+        # Initialize wheel velocities to zero.
+        self.v_left_cmd = 0.0 # m/s
+        self.v_right_cmd = 0.0 # m/s
+
+        # Subscriber for /odometry/filtered
+        self.create_subscription(Odometry, '/odometry/filtered', self.odom_callback, 10)
+        self.current_yaw = 0.0 # updated every time we receive odometry data
+        self.target_yaw = 0.0 # updated when we receive a forward command
+        self.move_forward = False # true if we are moving forward, stop or turn return false
+        self.yaw_threshold = 0.02 # Tuning 
+        self.multiplier = 1.17 # Tuning
 
         # Subscriber for /cmd_vel commands
         self.create_subscription(Twist, '/cmd_vel', self.cmd_vel_callback, 10)
+        self.target_forward_vel = 0.0        
 
         # Publisher for odometry from wheel estimates (/odom_wheel)
         self.odom_pub = self.create_publisher(Odometry, '/odom_wheel', 10)
@@ -29,8 +42,8 @@ class OdriveNode(Node):
             self.rightW = odrive.find_any(serial_number="396D346B3331")  # right
             self.leftW.clear_errors()
             self.rightW.clear_errors()
-            self.setInputMode(2)
             
+            self.setInputMode(1)
             self.setVelRampRate(0.05)
             self.setInertia()
             
@@ -44,10 +57,13 @@ class OdriveNode(Node):
 
         # Create a timer to periodically send commands and publish odometry
         timer_period = 0.1  # seconds
-        self.timer = self.create_timer(timer_period, self.timer_callback)
+        self.timer = self.create_timer(timer_period, self.odom_wheel_callback)
         self.get_logger().info("Controller Ready to be Used")
-    
+        self.input_timer = self.create_timer(timer_period, self.input_timer_callback)
         
+        # start with stopped position
+        self.stop()
+    
     def setInputMode(self, mode=1):
         # 1 = Passthrough
         # 2 = Vel_Ramp
@@ -63,44 +79,71 @@ class OdriveNode(Node):
         self.rightW.axis0.controller.config.inertia = 0.0368
         
     def cmd_vel_callback(self, msg: Twist):
-        self.get_logger().info(
-            f"Receive: linear={msg.linear.x:.2f} m/s, angular={msg.angular.z:.2f} rad/s"
-        )
         """
         Callback for /cmd_vel subscription.
         Stores the latest commanded linear and angular velocity.
         """
+        self.get_logger().info(
+            f"Receive: linear={msg.linear.x:.2f} m/s, angular={msg.angular.z:.2f} rad/s"
+        )
+        
+        if (msg.angular.z == 0):
+            if not self.move_forward:
+                if not (self.target_forward_vel == msg.linear.x):
+                    self.target_yaw = self.current_yaw
+            self.move_forward = True
+            self.target_forward_vel = msg.linear.x
+        else:
+            self.move_forward = False
+            self.target_forward_vel = msg.linear.x
+        
         # Convert the commanded Twist into left and right wheel velocities.
         # Differential drive equations:
         #   v_left  = linear.x - (angular.z * wheel_base / 2)
         #   v_right = linear.x + (angular.z * wheel_base / 2)
-        v_left_cmd = msg.linear.x - (msg.angular.z * self.wheel_base / 2.0)
-        v_right_cmd = msg.linear.x + (msg.angular.z * self.wheel_base / 2.0)
+        self.v_left_cmd = msg.linear.x - (msg.angular.z * self.wheel_base / 2.0)
+        self.v_right_cmd = msg.linear.x + (msg.angular.z * self.wheel_base / 2.0)
+        self.get_logger().info(
+                f"Command: left={self.v_left_cmd:.2f} rev/s, right={self.v_right_cmd:.2f} rev/s"
+            )
         
-        if (v_left_cmd == v_right_cmd == 0):
+    def input_timer_callback(self):
+        if (self.v_left_cmd == self.v_right_cmd == 0):
             self.stop()
         else:
             # CLOSED_LOOP_CONTROL state
             self.leftW.axis0.requested_state = 8
             self.rightW.axis0.requested_state = 8
             # Convert these from m/s to turns/sec using wheel circumference.
-            left_cmd_turns = v_left_cmd / self.wheel_circumference
-            right_cmd_turns = v_right_cmd / self.wheel_circumference
-            # # scale 
-            left_cmd_turns = left_cmd_turns * 0.99
-            right_cmd_turns = right_cmd_turns * 1.05
-            self.get_logger().info(
-                f"Command Turns/s: left={left_cmd_turns:.4f} turns/s, right={right_cmd_turns:.4f} turns/s"
-            )
+            left_cmd_turns = self.v_left_cmd / self.wheel_circumference
+            right_cmd_turns = self.v_right_cmd / self.wheel_circumference
+            
+            # scale if yaw is off
             try:
-                # Send the velocity commands to the ODrive devices.
+                if self.move_forward:
+                    yaw_error = self.current_yaw - self.target_yaw
+
+                    if abs(yaw_error) > self.yaw_threshold:
+                        if yaw_error > 0:  # Turn left to correct
+                            left_cmd_turns *= self.multiplier 
+                        else:  # Turn right to correct
+                            right_cmd_turns *= self.multiplier
+                        # print(f"Yaw Error: {yaw_error} Left: {left_cmd_turns} Right: {right_cmd_turns}")
+
+                # Send the adjusted velocity commands to the ODrive controllers
                 self.leftW.axis0.controller.input_vel = left_cmd_turns
                 self.rightW.axis0.controller.input_vel = right_cmd_turns
-                
             except Exception as e:
                 self.get_logger().error(f"Error sending command to ODrive devices: {e}")
+    
         
-    def timer_callback(self):
+    def odom_callback(self, msg: Odometry):
+        """Callback for /odometry/filtered subscription."""
+        # self.get_logger().info(f"Orientation Z: {orientation_z}")
+        self.current_yaw = msg.pose.pose.orientation.z
+        # self.get_logger().info(f"Forward {self.move_forward} Current Yaw: {self.current_yaw}")
+    
+    def odom_wheel_callback(self):
         """Encoder"""
         # Retrieve the estimated wheel velocities (in turns/sec) from the ODrive devices.
         try:
@@ -129,6 +172,8 @@ class OdriveNode(Node):
         # Idle state
         self.leftW.axis0.requested_state = 1
         self.rightW.axis0.requested_state = 1
+        self.move_forward = False
+        self.target_forward_vel = 0.0
     
 def main(args=None):
     rclpy.init(args=args)
