@@ -29,7 +29,7 @@ class OdriveNode(Node):
         self.yaw_threshold = 0.02 # Tuning 
         self.multiplier = 1.17 # Tuning
 
-        # Subscriber for /cmd_vel commands
+        # Subscriber for /cmd_vel commands1
         self.create_subscription(Twist, '/cmd_vel', self.cmd_vel_callback, 10)
         self.target_forward_vel = 0.0        
 
@@ -75,6 +75,8 @@ class OdriveNode(Node):
         self.rightW.axis0.controller.config.vel_ramp_rate=val
     
     def setInertia(self, val=0.0368):
+        # Nm/ (rev/s^2)
+        # used when InputMode = 2 (Vel_Ramp)
         self.leftW.axis0.controller.config.inertia = 0.0368
         self.rightW.axis0.controller.config.inertia = 0.0368
         
