@@ -12,10 +12,8 @@ class OdriveNode(Node):
         # Declare parameters:
         # 6.5 inches in meters: 6.5 * 0.0254 = 0.1651 m (approximately)
         # circumference = 0.1651 * pi = 0.5186769471076749 m
-        self.declare_parameter("wheel_circumference", 0.518677)
-        self.declare_parameter("wheel_base", 0.51)
-        self.wheel_circumference = self.get_parameter("wheel_circumference").value
-        self.wheel_base = self.get_parameter("wheel_base").value
+        self.wheel_circumference = 0.518677 
+        self.wheel_base = 0.51
         
         # Initialize wheel velocities to zero.
         self.v_left_cmd = 0.0 # m/s
@@ -76,7 +74,8 @@ class OdriveNode(Node):
     
     def setInertia(self, val=0.0368):
         # Nm/ (rev/s^2)
-        # used when InputMode = 2 (Vel_Ramp)
+        # used when InputMode = 2 (Vel_
+
         self.leftW.axis0.controller.config.inertia = 0.0368
         self.rightW.axis0.controller.config.inertia = 0.0368
         
@@ -105,9 +104,6 @@ class OdriveNode(Node):
         #   v_right = linear.x + (angular.z * wheel_base / 2)
         self.v_left_cmd = msg.linear.x - (msg.angular.z * self.wheel_base / 2.0)
         self.v_right_cmd = msg.linear.x + (msg.angular.z * self.wheel_base / 2.0)
-        self.get_logger().info(
-                f"Command: left={self.v_left_cmd:.2f} rev/s, right={self.v_right_cmd:.2f} rev/s"
-            )
         
     def input_timer_callback(self):
         if (self.v_left_cmd == self.v_right_cmd == 0):
@@ -135,9 +131,13 @@ class OdriveNode(Node):
                 # Send the adjusted velocity commands to the ODrive controllers
                 self.leftW.axis0.controller.input_vel = left_cmd_turns
                 self.rightW.axis0.controller.input_vel = right_cmd_turns
+        
             except Exception as e:
                 self.get_logger().error(f"Error sending command to ODrive devices: {e}")
     
+            self.get_logger().info(
+                f"Command: left={left_cmd_turns:.2f} rev/s, right={right_cmd_turns:.2f} rev/s"
+            )
         
     def odom_callback(self, msg: Odometry):
         """Callback for /odometry/filtered subscription."""
