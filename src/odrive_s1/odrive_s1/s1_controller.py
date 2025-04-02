@@ -23,13 +23,12 @@ class OdriveNode(Node):
         self.create_subscription(Odometry, '/odometry/filtered', self.odom_callback, 10)
         self.current_yaw = 0.0 # updated every time we receive odometry data
         self.target_yaw = 0.0 # updated when we receive a forward command
-        self.move_forward = False # true if we are moving forward, stop or turn return false
-        self.yaw_threshold = 0.02 # Tuning 
-        self.multiplier = 1.17 # Tuning
+        self.move_forward = False # true if we are moving forward (angular.z==0), stop or turn return false
 
         # Subscriber for /cmd_vel commands1
         self.create_subscription(Twist, '/cmd_vel', self.cmd_vel_callback, 10)
         self.target_forward_vel = 0.0        
+        self.current_cmd_vel = [0.0, 0.0]
 
         # Publisher for odometry from wheel estimates (/odom_wheel)
         self.odom_pub = self.create_publisher(Odometry, '/odom_wheel', 10)
@@ -41,9 +40,9 @@ class OdriveNode(Node):
             self.leftW.clear_errors()
             self.rightW.clear_errors()
             
-            self.setInputMode(1)
-            self.setVelRampRate(0.05)
-            self.setInertia()
+            # self.setInputMode(1)
+            # self.setVelRampRate(0.05)
+            # self.setInertia()
             
             self.get_logger().info("Successfully connected to both ODrive devices")
             self.get_logger().info(f"voltage L: {self.leftW.vbus_voltage} R: {self.rightW.vbus_voltage}")
@@ -84,9 +83,9 @@ class OdriveNode(Node):
         Callback for /cmd_vel subscription.
         Stores the latest commanded linear and angular velocity.
         """
-        self.get_logger().info(
-            f"Receive: linear={msg.linear.x:.2f} m/s, angular={msg.angular.z:.2f} rad/s"
-        )
+        # self.get_logger().info(
+        #     f"Receive: linear={msg.linear.x:.2f} m/s, angular={msg.angular.z:.2f} rad/s"
+        # )
         
         if (msg.angular.z == 0):
             if not self.move_forward:
@@ -109,9 +108,6 @@ class OdriveNode(Node):
         if (self.v_left_cmd == self.v_right_cmd == 0):
             self.stop()
         else:
-            # CLOSED_LOOP_CONTROL state
-            self.leftW.axis0.requested_state = 8
-            self.rightW.axis0.requested_state = 8
             # Convert these from m/s to turns/sec using wheel circumference.
             left_cmd_turns = self.v_left_cmd / self.wheel_circumference
             right_cmd_turns = self.v_right_cmd / self.wheel_circumference
@@ -119,25 +115,25 @@ class OdriveNode(Node):
             # scale if yaw is off
             try:
                 if self.move_forward:
-                    yaw_error = self.current_yaw - self.target_yaw
-
-                    if abs(yaw_error) > self.yaw_threshold:
-                        if yaw_error > 0:  # Turn left to correct
-                            left_cmd_turns *= self.multiplier 
-                        else:  # Turn right to correct
-                            right_cmd_turns *= self.multiplier
-                        # print(f"Yaw Error: {yaw_error} Left: {left_cmd_turns} Right: {right_cmd_turns}")
-
+                    yaw_error = self.target_yaw - self.current_yaw
+                    Kp_yaw = 0.25
+                    yaw_correction = Kp_yaw * yaw_error
+                    self.get_logger().info(f"yaw_correction: {yaw_correction}")
+                    left_cmd_turns = left_cmd_turns - yaw_correction
+                    right_cmd_turns = right_cmd_turns + yaw_correction
+                # CLOSED_LOOP_CONTROL state
+                self.leftW.axis0.requested_state = 8
+                self.rightW.axis0.requested_state = 8
+                
                 # Send the adjusted velocity commands to the ODrive controllers
-                self.leftW.axis0.controller.input_vel = left_cmd_turns
+                self.leftW.axis0.controller.input_vel = left_cmd_turns 
                 self.rightW.axis0.controller.input_vel = right_cmd_turns
+                self.get_logger().info(
+                    f"Command: left={left_cmd_turns:.2f} rev/s, right={right_cmd_turns:.2f} rev/s"
+                )
         
             except Exception as e:
                 self.get_logger().error(f"Error sending command to ODrive devices: {e}")
-    
-            self.get_logger().info(
-                f"Command: left={left_cmd_turns:.2f} rev/s, right={right_cmd_turns:.2f} rev/s"
-            )
         
     def odom_callback(self, msg: Odometry):
         """Callback for /odometry/filtered subscription."""
