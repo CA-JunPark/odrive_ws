@@ -1,0 +1,35 @@
+slam_toolbox:
+  ros__parameters:
+    # Use simulation time if applicable
+    use_sim_time: false
+
+    # Set the node mode to mapping (asynchronous mapping mode)
+    mode: localization #"mapping"
+
+    # Frames configuration (ensure these match your TF tree)
+    base_frame: "base_link"
+    odom_frame: "odom"  # This is the expected frame in the message header
+    scan_topic: "/scan"
+
+    map_file_name: /home/robotics/2025_Airobot_PC/map2.yaml
+    # map_start_pose: [0.0, 0.0, 0.0]
+
+    # Mapping parameters
+    resolution: 0.05              # Map resolution in meters per cell
+    map_update_interval: 1.0      # Seconds between map updates
+    maximum_update_rate: 10.0     # Maximum frequency for updating the map (Hz)
+    minimum_time_between_updates: 2.0  # Minimum interval between map updates (seconds)
+
+    # Laser parameters (adjust to match your sensor's range)
+    max_laser_range: 12.0         # Maximum valid laser range (meters)
+    min_laser_range: 0.2          # Minimum valid laser range (meters)
+
+    # Map update factors for free and occupied space
+    update_factor_free: 0.4
+    update_factor_occupied: 0.9
+
+    # TF transform tolerance in seconds
+    transform_tolerance: 0.2
+
+    # Optional: Pose correction threshold can help reduce drift
+    pose_correction_threshold: 0.2
