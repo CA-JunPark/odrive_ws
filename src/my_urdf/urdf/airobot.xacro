@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<robot name="airobot" xmlns:xacro="http://ros.org/wiki/xacro">
+    <!-- Define robot constants -->
+    <xacro:property name="base_width" value="0.48"/>
+    <xacro:property name="base_length" value="0.54"/>
+    <xacro:property name="base_height" value="0.97"/>
+
+    <xacro:property name="lidar_height" value="0.055"/>
+    <xacro:property name="lidar_radius" value="0.097"/>
+
+    <xacro:property name="wheel_radius" value="0.08255"/>
+    <xacro:property name="wheel_width" value="0.055"/> 
+
+    <xacro:property name="caster_radius" value="0.04"/> 
+
+    <link name="base_footprint"/>
+
+    <link name="base_link">
+        <visual>
+            <geometry>
+                <box size="${base_length} ${base_width} ${base_height}"/>   
+            </geometry>    
+            <material name="Wooden">
+                <color rgba="0.6 0.3 0.1 1.0"/>
+            </material>
+            <origin xyz="0.0 0.0 ${base_height/2}"/>
+        </visual>
+    </link>
+
+    <link name="lidar_link">
+        <visual>
+            <geometry>
+                <cylinder radius="${lidar_radius}" length="${lidar_height}"/>
+            </geometry>
+        </visual>
+    </link>
+
+    <link name="left_link">
+        <visual>
+            <geometry>
+                <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+            </geometry>
+            <material name="Grey">
+                <color rgba="0.5 0.5 0.5 1.0"/>
+            </material>
+        </visual>
+    </link>
+
+    <link name="right_link">
+        <visual>
+            <geometry>
+                <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+            </geometry>
+            <material name="Grey">
+                <color rgba="0.5 0.5 0.5 1.0"/>
+            </material>
+        </visual>
+    </link>
+    
+    <link name="left_caster">
+        <visual>
+            <geometry>
+                <sphere radius="${caster_radius}"/>
+            </geometry>
+            <material name="Grey">
+                <color rgba="0.5 0.5 0.5 1.0"/>
+            </material>
+        </visual>
+    </link>
+
+    <link name="right_caster">
+        <visual>
+            <geometry>
+                <sphere radius="${caster_radius}"/>
+            </geometry>
+            <material name="Grey">
+                <color rgba="0.5 0.5 0.5 1.0"/>
+            </material>
+        </visual>
+    </link>
+
+    <!-- Joints -->
+    <joint name='base_to_footprint' type="fixed">
+        <parent link="base_link"/>
+        <child link="base_footprint"/>
+        <origin xyz="${base_length/2-0.1} 0.0 -${caster_radius*2}"/>
+    </joint>
+
+    <joint name="base_to_lidar" type="fixed">
+        <parent link="base_link"/>
+        <child link="lidar_link"/>
+        <origin xyz="${base_length/2-lidar_radius} 0.0 ${base_height + lidar_height/2}" />
+    </joint>
+
+    <joint name="base_to_left" type="fixed">
+        <parent link="base_link"/>
+        <child link="left_link"/>
+        <origin xyz="${base_length/2-0.1} -${base_width/2+wheel_width/2} 0.0" rpy="1.5708 0.0 0.0"/>
+    </joint>
+
+    <joint name="base_to_right" type="fixed">
+        <parent link="base_link"/>
+        <child link="right_link"/>
+        <origin xyz="${base_length/2-0.1} ${base_width/2+wheel_width/2} 0.0" rpy="1.5708 0.0 0.0"/>
+    </joint>
+
+    <joint name="base_to_left_caster" type="fixed">
+        <parent link="base_link"/>
+        <child link="left_caster"/>
+        <origin xyz="-${base_length/2-0.1} -${base_width/2-0.1} -${caster_radius}"/>
+    </joint>
+
+    <joint name="base_to_right_caster" type="fixed">
+        <parent link="base_link"/>
+        <child link="right_caster"/>
+        <origin xyz="-${base_length/2-0.1} ${base_width/2-0.1} -${caster_radius}"/>
+    </joint>
+
+</robot>
