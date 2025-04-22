@@ -1,0 +1,38 @@
+ros2 launch rplidar_ros rplidar_a1_launch.py 
+ros2 launch rf2o_laser_odometry rf2o_laser_odometry.launch.py 
+
+ros2 launch mpu6050driver mpu6050driver_launch.py
+
+ros2 run odrive_s1 botwheel_encoder
+
+Not Used anymore
+  # ros2 run odrive_s1 s1_controller 
+  # ros2 run odrive_s1 s1_teleop
+
+sudo ip link set can0 up type can bitrate 250000
+    Need this after avery reboot in order to use CAN
+
+ros2 launch odrive_botwheel_explorer botwheel_explorer.launch.py
+ros2 topic pub --rate 30 /botwheel_explorer/cmd_vel geometry_msgs/msg/TwistStamped "
+    twist:
+      linear:
+        x: 0.2
+        y: 0.0
+        z: 0.0
+      angular:
+        x: 0.0
+        y: 0.0
+        z: 0.0"
+
+ros2 run odrive_s1 botwheel_teleop 
+
+
+ros2 launch odrive_can example_launch.yaml
+  close_loop
+    ros2 service call /left/request_axis_state odrive_can/srv/AxisState "{axis_requested_state: 8}"
+    ros2 service call /right/request_axis_state odrive_can/srv/AxisState "{axis_requested_state: 8}"
+  idle
+    ros2 service call /left/request_axis_state odrive_can/srv/AxisState "{axis_requested_state: 1}"
+    ros2 service call /right/request_axis_state odrive_can/srv/AxisState "{axis_requested_state: 1}"
+
+
