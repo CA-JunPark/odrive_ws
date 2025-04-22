@@ -101,7 +101,8 @@ class BotwheelEncoderNode(Node):
         odom_msg.child_frame_id = "base_link"
         odom_msg.pose.pose.position.x = self.current_x
         odom_msg.pose.pose.position.y = self.current_y
-        odom_msg.pose.pose.orientation.z = self.current_theta
+        odom_msg.pose.pose.orientation.z = sin(self.current_theta / 2)
+        odom_msg.pose.pose.orientation.w = cos(self.current_theta / 2)
         # caculate Linear.x and Angular.z with velocities of the wheels
         odom_msg.twist.twist.linear.x = self.linear_x
         odom_msg.twist.twist.angular.z = self.angular_z
