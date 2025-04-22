@@ -1,0 +1,48 @@
+# build if new file is created in the package
+colcon build --symlink-install --packages-select 
+
+if colcon build fails
+    delete build folder and try again 
+    it will reset the build from scratch
+
+# display urdf
+    ros2 launch my_urdf display.launch.py 
+    # should be executed in terminal not vscode terminal
+    # change Global Fixed Frame to laser or base_link to display the robot when running without other sensors
+
+# convert xacro to urdf
+    cd ~/2025_Airobot/urdf_ws
+    xacro src/my_urdf/urdf/airobot.xacro > src/my_urdf/urdf/airobot.urdf.xml
+
+# check frame transfrom in graph
+ros2 run tf2_tools view_frames
+
+# ROS2 graph
+rqt_graph
+
+Nav2 
+    ros2 launch nav2_bringup navigation_launch.py params_file:=/home/robotics/2025_Airobot_PC/urdf_ws/src/my_urdf/config/nav2_params.yaml
+
+Move Test
+    PC
+        ros2 launch my_urdf slam.launch.py
+        ros2 launch my_urdf display.launch.py
+    RP4
+        ros2 launch rplidar_ros rplidar_a1_launch.py
+            if odom1 in ekf.yaml is enabled
+                ros2 launch rf2o_laser_odometry rf2o_laser_odometry.launch.py **
+        ros2 run odrive_s1 imu_mpu6050
+        ros2 launch odrive_botwheel_explorer botwheel_explorer.launch.py 
+            # sudo ip link set can0 up type can bitrate 250000 
+            # this command is needed after every reboot
+        ros2 run odrive_s1 botwheel_encoder **
+    To reset the map
+        need to restart **s first and then restart slam.launch and nav2_bringup again
+
+Teleop 
+    RP4
+        ros2 launch odrive_botwheel_explorer botwheel_explorer.launch.py 
+                # sudo ip link set can0 up type can bitrate 250000
+                # this command is needed after every reboot
+    PC
+        ros2 run my_urdf botwheel_teleop_pc
