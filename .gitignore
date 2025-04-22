@@ -64,3 +64,6 @@ log/
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+
+ros_odrive/
+ros2_mpu6050_driver/
