@@ -31,7 +31,6 @@ Move Test
         ros2 launch rplidar_ros rplidar_a1_launch.py
             if odom1 in ekf.yaml is enabled
                 ros2 launch rf2o_laser_odometry rf2o_laser_odometry.launch.py **
-        ros2 run odrive_s1 imu_mpu6050
         ros2 launch odrive_botwheel_explorer botwheel_explorer.launch.py 
             # sudo ip link set can0 up type can bitrate 250000 
             # this command is needed after every reboot
