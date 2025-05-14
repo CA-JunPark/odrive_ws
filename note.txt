@@ -10,7 +10,7 @@ Not Used anymore
   # ros2 run odrive_s1 s1_teleop
 
 sudo ip link set can0 up type can bitrate 250000
-    Need this after avery reboot in order to use CAN
+    Need this after every reboot in order to use CAN
 
 ros2 launch odrive_botwheel_explorer botwheel_explorer.launch.py
 ros2 topic pub --rate 30 /botwheel_explorer/cmd_vel geometry_msgs/msg/TwistStamped "
