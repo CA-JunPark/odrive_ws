@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from collections import deque
 import numpy as np
 
+# This node subscribes to the topic /odom_wheel and publishes to /botwheel_explorer/cmd_vel
 class CmdVelPlotter(Node):
     def __init__(self):
         super().__init__('odom_wheel_plotter')
@@ -27,6 +28,9 @@ class CmdVelPlotter(Node):
         )
         
         # Create subscriber with explicit QoS
+        # A subscriber is a node that listens to messages from a publisher. 
+        # The subscriber is responsible for receiving the messages and 
+        # processing them accordingly.
         self.subscription = self.create_subscription(
             Odometry,
             '/odom_wheel',
@@ -59,6 +63,8 @@ class CmdVelPlotter(Node):
 
     def cmd_vel_callback(self, msg):
         # Append new values from Odometry message
+        # The Odometry message is a ROS message that contains information about the 
+        # pose and velocity of a robot. See: https://docs.ros.org/en/api/nav_msgs/html/msg/Odometry.html
         self.linear_x.append(msg.twist.twist.linear.x)
         self.angular_z.append(msg.twist.twist.angular.z)
 

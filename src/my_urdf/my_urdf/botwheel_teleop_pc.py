@@ -28,8 +28,8 @@ class BotwheelTeleop(Node):
         """
         settings = termios.tcgetattr(sys.stdin.fileno())
         try:
-            speed = 0.4
-            spinSpeed = 1.2
+            speed = 0.4 # m/s 
+            spinSpeed = 1.2 # m/s
             tty.setraw(sys.stdin.fileno())
             while rclpy.ok():
                 key = sys.stdin.read(1)
@@ -84,4 +84,9 @@ def main(args=None):
 
 
 if __name__ == '__main__':
+    """
+    1. Open a new terminal and type 'ros2 run my_urdf botwheel_teleop_pc'
+    2. Open another new terminal and type 'ros2 launch odrive_botwheel_explorer botwheel_explorer.launch.py'
+    3. You can control the robot using 'w', 's', 'a', 'd', 'q' keys.
+    """
     main()
