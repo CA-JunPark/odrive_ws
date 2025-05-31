@@ -61,10 +61,30 @@ class BotwheelTeleop(Node):
                     cmd_vel.twist.angular.z = -spinSpeed
                     # self.get_logger().info('right')
                     self.publisher.publish(cmd_vel)
+                # JB 2025-05-29 - going to see about adding a stop...
+                elif key == 'e':
+                    cmd_vel = TwistStamped()
+                    cmd_vel.header.stamp = self.get_clock().now().to_msg()
+                    cmd_vel.twist.linear.x = 0.0
+                    cmd_vel.twist.angular.z = 0.0
+                    # self.get_logger().info('right')
+                    self.publisher.publish(cmd_vel)
                 elif key == 'q':
+                    cmd_vel = TwistStamped()
+                    cmd_vel.header.stamp = self.get_clock().now().to_msg()
+                    cmd_vel.twist.linear.x = 0.0
+                    cmd_vel.twist.angular.z = 0.0
+                    # self.get_logger().info('right')
+                    self.publisher.publish(cmd_vel)
                     self.get_logger().info('Quit')
                     break
                 else:
+                    cmd_vel = TwistStamped()
+                    cmd_vel.header.stamp = self.get_clock().now().to_msg()
+                    cmd_vel.twist.linear.x = 0.0
+                    cmd_vel.twist.angular.z = 0.0
+                    # self.get_logger().info('right')
+                    self.publisher.publish(cmd_vel)
                     self.get_logger().info('Quit')
                     break
         finally:
