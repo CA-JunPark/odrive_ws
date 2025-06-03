@@ -4,6 +4,9 @@ from geometry_msgs.msg import Twist # type: ignore
 from nav_msgs.msg import Odometry # type: ignore
 import odrive
 
+# Depreciated! This file _was_ used to control the ODrive S1 controllers manually but
+#   is no longer necessary because of the official ODrive ROS2 controller package
+#   ros_odrive at github.com/odriverobotics/ros_odrive
 # junk old file
 class OdriveNode(Node):
     def __init__(self):
