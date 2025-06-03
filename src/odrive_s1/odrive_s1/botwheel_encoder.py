@@ -59,6 +59,9 @@ class BotwheelEncoderNode(Node):
         # Create a timer to publish the 'Odometry' message at a rate of 1 kHz
         self.publishing = self.create_timer(0.001, self.publish_odom)
 
+        # Make initialization completion known
+        self.get_logger().info("Botwheel Encoder Node Initialized...")
+
     def joint_states_callback(self, msg: JointState):
         """
         Callback function for the '/joint_states' subscription.
