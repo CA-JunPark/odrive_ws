@@ -21,9 +21,10 @@ class BotwheelTeleop(Node):
 
         Read char from stdin and publish TwistStamped message accordingly.
         'w' : forward
-        's' : backward
         'a' : left
+        's' : backward
         'd' : right
+        'e' : stop
         'q' : quit
         """
         settings = termios.tcgetattr(sys.stdin.fileno())
@@ -40,19 +41,19 @@ class BotwheelTeleop(Node):
                     cmd_vel.twist.angular.z = 0.0
                     # self.get_logger().info('forward')
                     self.publisher.publish(cmd_vel)
-                elif key == 's':
-                    cmd_vel = TwistStamped()
-                    cmd_vel.header.stamp = self.get_clock().now().to_msg()
-                    cmd_vel.twist.linear.x = -speed
-                    cmd_vel.twist.angular.z = 0.0
-                    # self.get_logger().info('backward')
-                    self.publisher.publish(cmd_vel)
                 elif key == 'a':
                     cmd_vel = TwistStamped()
                     cmd_vel.header.stamp = self.get_clock().now().to_msg()
                     cmd_vel.twist.linear.x = 0.0
                     cmd_vel.twist.angular.z = spinSpeed
                     # self.get_logger().info('left')
+                    self.publisher.publish(cmd_vel)
+                elif key == 's':
+                    cmd_vel = TwistStamped()
+                    cmd_vel.header.stamp = self.get_clock().now().to_msg()
+                    cmd_vel.twist.linear.x = -speed
+                    cmd_vel.twist.angular.z = 0.0
+                    # self.get_logger().info('backward')
                     self.publisher.publish(cmd_vel)
                 elif key == 'd':
                     cmd_vel = TwistStamped()
@@ -61,7 +62,6 @@ class BotwheelTeleop(Node):
                     cmd_vel.twist.angular.z = -spinSpeed
                     # self.get_logger().info('right')
                     self.publisher.publish(cmd_vel)
-                # JB 2025-05-29 - going to see about adding a stop...
                 elif key == 'e':
                     cmd_vel = TwistStamped()
                     cmd_vel.header.stamp = self.get_clock().now().to_msg()
@@ -107,6 +107,14 @@ if __name__ == '__main__':
     """
     1. Open a new terminal and type 'ros2 run my_urdf botwheel_teleop_pc'
     2. Open another new terminal and type 'ros2 launch odrive_botwheel_explorer botwheel_explorer.launch.py'
-    3. You can control the robot using 'w', 's', 'a', 'd', 'q' keys.
+    3. You can control the robot using 'w', 'a', 's', 'd', 'e', and 'q' keys.
+
+    Controls:
+    'w' : forward
+    'a' : left
+    's' : backward
+    'd' : right
+    'e' : stop
+    'q' : quit
     """
     main()
